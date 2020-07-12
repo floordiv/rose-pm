@@ -1,0 +1,12 @@
+{
+  "last-updated": "2020-07-11 01:54:49.032083",
+  "last-version": "anyversion2",
+  "versions-hashes": {
+    "anyversion1": "3b7546ed79e3e5a7907381b093c5a182cbf364c5dd0443dfa956c8cca271cc33",
+    "anyversion2": "cd372fb85148700fa88095e3492d3f9f5beb43e555e5ff26d95f5a6adc36f8e6"
+  },
+
+  "release-date": "2020-07-11 01:54:49.032083",
+  "description": "This is an example of a repository",
+  "website": null
+}
