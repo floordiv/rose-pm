@@ -2,6 +2,9 @@ import os
 import hashlib
 
 
+original_builtins = globals()
+
+
 def get_users():
     return [user for user in os.listdir('repos') if not os.path.isfile(user)]
 
@@ -47,4 +50,8 @@ def gethash(user, repo, version):
         total_hash = hashlib.sha256(bytes(''.join(hashes.values()).encode())).hexdigest()
 
         return hashes, total_hash
+
+
+my_functions = list(globals().items())[12:]
+print({a.replace('_', '-'): b.__name__ for a, b in my_functions})
 
