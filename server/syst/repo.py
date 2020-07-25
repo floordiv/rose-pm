@@ -1,8 +1,6 @@
 import os
+import json
 import hashlib
-
-
-original_builtins = globals()
 
 
 def get_users():
@@ -37,6 +35,15 @@ def user_exists(user):
     return user in get_users()
 
 
+def get_repo_info(user, repo):
+    with open(f'repos/{user}/{repo}/.repo') as repo_inf:
+        return json.load(repo_inf)
+
+
+# def get_version_info(user, repo, version):
+    
+
+
 def gethash(user, repo, version):
     files = get_version(user, repo, version)
 
@@ -52,6 +59,6 @@ def gethash(user, repo, version):
         return hashes, total_hash
 
 
-my_functions = list(globals().items())[12:]
-print({a.replace('_', '-'): b.__name__ for a, b in my_functions})
+# my_functions = list(globals().items())[12:]
+# print({a.replace('_', '-'): b.__name__ for a, b in my_functions})
 

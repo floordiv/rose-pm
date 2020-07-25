@@ -1,85 +1,87 @@
 import json
 import socket
 import datetime
-from time import sleep
 from threading import Thread
+from sys import exit as abort  # грех
 
 import syst.repo as repo
 
 
-DEFAULT_PROXY_IP = '127.0.0.1'
-DEFAULT_PROXY_PORT = 8888
-SESSION_KEY_LEN = 16    # 2857942574656970690381479936 variants of session_key required to brute force it
+DEFAULT_IP = '127.0.0.1'
+DEFAULT_PORT = 8888
 
 
-class ProxyServer:
-    def __init__(self, proxy_ip=DEFAULT_PROXY_IP, proxy_port=DEFAULT_PROXY_PORT):
-        self.proxy_addr = proxy_ip + ':' + str(proxy_port)
-        self.updates = []   # [client, data]
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+class RequestsDistributor:
+    def __init__(self, distribution_map):
+        self.dmap = distribution_map
+
+    def handle(self, conn, request):
+        rtype = request['type']
+
+        if rtype not in self.dmap:
+            return conn.send({'type': 'fail', 'desc': 'invalid-request-type'})
 
         try:
-            sock.connect((proxy_ip, proxy_port))
-            print(f'[{datetime.datetime.now()}] [RUN-SERVER:connecting] Successfully connected to the proxy-server: {self.proxy_addr}')
-            self.sock = sock
-
-            Thread(target=self.updates_listener).start()
+            data = self.dmap[rtype](*request['payload'])
+            conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
         except Exception as exc:
-            print(f'[{datetime.datetime.now()}] [RUN-SERVER:connecting] Failed to connect to the proxy-server: {exc}')
-            self.sock = None
+            conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
 
-    def send(self, session_key, data):
-        packet = session_key + '|' + json.dumps(data)
 
-        self.sock.send(bytes(packet.encode()))
+class MainServer:
+    def __init__(self, ip=DEFAULT_IP, port=DEFAULT_PORT):
+        self.ip, self.port = ip, port
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.updates = []
+
+    def init(self):
+        try:
+            self.sock.bind((self.ip, self.port))
+            self.sock.listen(0)
+        except OSError:
+            print(f'[{datetime.datetime.now()}] [MAINSERVER] Failed to init server: address already in use')
+            abort(1)
+
+    def start(self):
+        Thread(target=self.connections_listener).start()
+        print(f'[{datetime.datetime.now()}] [MAINSERVER] Successfully initialized and started on {self.ip}:{self.port}')
+
+    def connections_listener(self):
+        while True:
+            conn, addr = self.sock.accept()
+
+            print(f'[{datetime.datetime.now()}] [MAINSERVER] New connection: {addr[0]}:{addr[1]}')
+            Thread(target=self.connections_handler, args=(conn, addr)).start()
+
+    def connections_handler(self, conn, addr):
+        try:
+            while True:
+                data = conn.recv(8192)
+
+                try:
+                    decoded = data.decode()
+                    jsonified = json.loads(decoded)
+
+                    if 'type' not in jsonified or 'payload' not in jsonified:
+                        raise json.JSONDecodeError
+                except json.JSONDecodeError:
+                    conn.send(json.dumps({'type': 'fail', 'desc': 'bad-request'}).encode())
+                    continue
+
+                self.updates.append([conn, jsonified])
+        except BrokenPipeError:
+            print(f'[{datetime.datetime.now()}[ [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
+            conn.close()
 
     def get_updates(self):
-        updates = self.updates[:]   # copy list, cause I will clear it up
+        updates = self.updates[:]   # copy list
         self.updates = []
 
         return updates
 
-    def updates_listener(self):
-        while True:
-            try:
-                data = self.sock.recv(8192).decode()
-            except UnicodeDecodeError:
-                continue
 
-            session_key = data[:SESSION_KEY_LEN]
-
-            try:
-                packet = json.loads(data[SESSION_KEY_LEN:])
-
-                if 'type' not in packet or 'payload' not in packet:
-                    # payload should exist anyway, even if it's an empty list
-                    raise json.JSONDecodeError  # I'm too lazy to copypaste code in except block
-            except json.JSONDecodeError:
-                self.send(session_key, {'type': 'fail', 'desc': 'invalid-data'})
-                continue
-
-            self.updates += [[session_key, packet]]
-
-
-class RequestsDistributor:
-    def __init__(self, proxy_server, distribution_map):
-        self.pserver = proxy_server
-        self.dmap = distribution_map
-
-    def handle(self, session_key, request):
-        rtype = request['type']
-
-        if rtype not in self.dmap:
-            return self.pserver.send(session_key, {'type': 'fail', 'desc': 'invalid-request-type'})
-
-        try:
-            data = self.dmap[rtype](*request['payload'])
-            self.pserver.send(session_key, {'type': 'succ', 'data': data})
-        except Exception as exc:
-            self.pserver.send(session_key, {'type': 'fail', 'desc': str(exc)})
-
-
-def worker(proxy_server=None, requests_handler=None, dmap=None):
+def worker(mainserver=None, requests_handler=None, dmap=None):
     if dmap is None:
         dmap = {
             'get-users': repo.get_users,
@@ -92,13 +94,16 @@ def worker(proxy_server=None, requests_handler=None, dmap=None):
             'get-version-hash': repo.gethash
         }
 
-    if proxy_server is None:
-        proxy_server = ProxyServer()
     if requests_handler is None:
-        requests_handler = RequestsDistributor(proxy_server, dmap)
+        requests_handler = RequestsDistributor(dmap)
+    if mainserver is None:
+        mainserver = MainServer()
+        mainserver.init()
+        mainserver.start()
 
     while True:
-        updates = proxy_server.get_updates()
+        updates = mainserver.get_updates()
 
-        for session_key, request in updates:
-            requests_handler.handle(session_key, request)
+        for conn, request in updates:
+            requests_handler.handle(conn, request)
+
