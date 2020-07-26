@@ -47,5 +47,8 @@ class Session:
 
         return final_payload
 
+    def get_sock(self):
+        return self.sock
+
     def __del__(self):
         self.sock.close()

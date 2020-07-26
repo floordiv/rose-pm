@@ -40,8 +40,22 @@ def get_repo_info(user, repo):
         return json.load(repo_inf)
 
 
-# def get_version_info(user, repo, version):
-    
+def get_version_info(user, repo, version):
+    assert user_exists(user) and exists(user, repo) and version_exists(user, repo, version)
+
+    repo_info = get_repo_info(user, repo)
+
+    version_hash = repo_info['versions-hashes'][version]
+    version_is_the_newest = repo_info['last-version'] == version
+    version_size = 0
+
+    for dirpath, dirnames, filenames in os.walk(f'repos/{user}/{repo}/{version}'):
+        for file in filenames:
+            file_path = os.path.join(dirpath, file)
+
+            # skip if it is symbolic link
+            if not os.path.islink(file_path):
+                version_size += os.path.getsize(file_path)
 
 
 def gethash(user, repo, version):
