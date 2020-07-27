@@ -11,26 +11,23 @@ class Transmission:
         self.chunk_size = chunk_size
 
     def start(self):
-        print('[TRANSMISSION] Started')
+        print(f'[{datetime.now()}] [TRANSMISSION] Started')
 
         with open(self.filename, 'rb') as file:
             chunks = list(iter(lambda: file.read(self.chunk_size), b''))
 
-        sleep(0.5)
+        chunks_count = len(chunks)
 
         self.conn.send(json.dumps(
             {'type': 'trnsmsn-init',
-             'packets': len(chunks),
+             'packets': chunks_count,
              'file': os.path.basename(self.filename),
              'chunk': self.chunk_size}
                                   ).encode())
 
-        sleep(0.5)
+        self.conn.recv(10)
 
-        try:
-            for chunk_index, chunk in enumerate(chunks, start=1):
-                self.conn.send(chunk)
-                print('[TRANSMISSION] Sent', chunk_index, 'chunks of', len(chunks))
-            print('[TRANSMISSION] Completed')
-        except OSError:
-            return
+        for chunk_index, chunk in enumerate(chunks, start=1):
+            self.conn.send(chunk)
+            print(f'[{datetime.now()}] [TRANSMISSION] Sent', chunk_index, 'chunks of', chunks_count)
+        print(f'[{datetime.now()}] [TRANSMISSION] Completed')

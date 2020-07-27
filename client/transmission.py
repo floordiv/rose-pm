@@ -20,11 +20,8 @@ class Transmission:
         self.chunksize = 1024
 
     def start(self):
-        if os.path.exists(self.dest + '/' + self.repo):
-            print(f'[ROSE] Error: already installed. Try "rose update {self.author}:{self.repo}"')
-            return
-
         self.sock.settimeout(3)
+
         data = self.sock.recv(1024)
         init_packet = json.loads(data.decode())
 
@@ -32,7 +29,10 @@ class Transmission:
             self.packets = init_packet['packets']
             self.filename = init_packet['file']
             self.chunksize = init_packet['chunk']
+
+            self.sock.send(b'ok')
         else:
+            print(init_packet)
             print('[ROSE] Transmission failed: did not receive initial packet')
             return
 

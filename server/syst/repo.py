@@ -98,4 +98,3 @@ def download(conn, user, repo, version):
 
     trnsmsn = transmission.Transmission(conn, target)
     trnsmsn.start()
-

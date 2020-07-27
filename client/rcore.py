@@ -11,32 +11,29 @@ class Session:
         self.sock.connect(pm_addr)
 
         self.args_for_rtypes = {
-            'get-users': (),
-            'get-repos': ('login',),
-            'get-versions': ('login', 'repo'),
-            'get-version': ('login', 'repo', 'version'),
-            'repo-exists': ('login', 'repo'),
-            'version-exists': ('login', 'repo', 'version'),
-            'user-exists': ('login',),
+            'get-users':        (),
+            'get-repos':        ('login',),
+            'get-versions':     ('login', 'repo'),
+            'get-version':      ('login', 'repo', 'version'),
+            'repo-exists':      ('login', 'repo'),
+            'version-exists':   ('login', 'repo', 'version'),
+            'user-exists':      ('login',),
             'get-version-hash': ('login', 'repo', 'version'),
-            'download': ('login', 'repo', 'version')
+            'download':         ('login', 'repo', 'version')
         }
 
-    def request(self, rtype, wait_response=True, **payload):
+    def request(self, rtype, wait_response=True, direct_api_call=False, **payload):
         assert rtype in self.args_for_rtypes
 
         payload = self.validate_args(rtype, payload)
 
-        if payload is False:    # just if not payload won't work, cause an empty list (possible variant) is False, too
+        if payload is False and not direct_api_call:  # just if not payload won't work, cause an empty list (possible variant) is False, too
             raise UserWarning('invalid payload')
 
         self.sock.send(json.dumps({'type': rtype, 'payload': payload}).encode())
 
         if wait_response:   # this is kinda get-request
             raw = self.sock.recv(1024)
-
-            print(raw, '\n\n')
-
             response = json.loads(raw.decode())
 
             return response

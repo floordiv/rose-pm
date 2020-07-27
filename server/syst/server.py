@@ -5,6 +5,7 @@ import datetime
 from time import sleep
 from threading import Thread
 from sys import exit as abort  # грех
+from traceback import format_exc
 
 import syst.repo as repo
 
@@ -18,10 +19,15 @@ class RequestsDistributor:
         self.dmap = distribution_map
 
     def handle(self, conn, request):
+        """
+        @type conn: socket.socket
+        @type request: dict
+        """
+
         rtype = request['type']
 
         if rtype not in self.dmap:
-            return conn.send({'type': 'fail', 'desc': 'invalid-request-type'})
+            return conn.send(json.dumps({'type': 'fail', 'desc': 'invalid-request-type'}).encode())
 
         try:
             func = self.dmap[rtype]
@@ -33,11 +39,15 @@ class RequestsDistributor:
             data = func(*args)
 
             if data is not None:
-                print(data, 'lol')
-
                 conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
         except Exception as exc:
-            conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
+            try:
+                conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
+            except OSError:
+                conn.close()
+
+                client_ip, client_port = conn.getpeername()
+                print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
 
 
 class MainServer:
@@ -69,7 +79,7 @@ class MainServer:
     def connections_handler(self, conn, addr):
         try:
             while True:
-                data = conn.recv(8192)
+                data = conn.recv(2048)
 
                 try:
                     decoded = data.decode()
@@ -78,6 +88,7 @@ class MainServer:
                     if 'type' not in jsonified or 'payload' not in jsonified:
                         raise json.JSONDecodeError
                 except json.JSONDecodeError:
+                    # print(decoded)
                     conn.send(json.dumps({'type': 'fail', 'desc': 'bad-request'}).encode())
                     continue
 
@@ -87,7 +98,7 @@ class MainServer:
             conn.close()
 
     def get_updates(self):
-        while not len(self.updates): sleep(0.1)
+        while not len(self.updates): sleep(0.1)  # to avoid a ka-boom of the server
 
         updates = self.updates[:]   # copy list
         self.updates = []
@@ -121,4 +132,3 @@ def worker(mainserver=None, requests_handler=None, dmap=None):
 
         for conn, request in updates:
             requests_handler.handle(conn, request)
-
