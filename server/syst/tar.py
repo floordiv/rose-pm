@@ -3,8 +3,8 @@ import shutil
 import tarfile
 
 
-def pack_dir(dirname):
-    arc_name = 'tmp/' + os.path.basename(dirname) + '.tar.gz'
+def pack_dir(name, dirname, dist):
+    arc_name = os.path.join(dist, name) + '.tar.gz'
 
     try:
         tar = tarfile.open(arc_name, 'x:gz')
@@ -12,7 +12,7 @@ def pack_dir(dirname):
         tar.close()
     except FileExistsError:
         os.remove(arc_name)
-        return pack_dir(dirname)
+        return pack_dir(name, dirname, dist)
 
     return arc_name
 

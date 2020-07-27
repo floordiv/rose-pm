@@ -18,7 +18,8 @@ class Session:
             'repo-exists': ('login', 'repo'),
             'version-exists': ('login', 'repo', 'version'),
             'user-exists': ('login',),
-            'get-version-hash': ('login', 'repo', 'version')
+            'get-version-hash': ('login', 'repo', 'version'),
+            'download': ('login', 'repo', 'version')
         }
 
     def request(self, rtype, wait_response=True, **payload):
@@ -32,7 +33,11 @@ class Session:
         self.sock.send(json.dumps({'type': rtype, 'payload': payload}).encode())
 
         if wait_response:   # this is kinda get-request
-            response = json.loads(self.sock.recv(1024).decode())
+            raw = self.sock.recv(1024)
+
+            print(raw, '\n\n')
+
+            response = json.loads(raw.decode())
 
             return response
 

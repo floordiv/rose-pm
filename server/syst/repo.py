@@ -2,6 +2,9 @@ import os
 import json
 import hashlib
 
+import syst.tar as tar
+import syst.transmission as transmission
+
 
 def get_users():
     return [user for user in os.listdir('repos') if not os.path.isfile(user)]
@@ -57,6 +60,11 @@ def get_version_info(user, repo, version):
             if not os.path.islink(file_path):
                 version_size += os.path.getsize(file_path)
 
+    return {'info': repo_info,
+            'hash': version_hash,
+            'is-the-newest': version_is_the_newest,
+            'size': version_size}
+
 
 def gethash(user, repo, version):
     files = get_version(user, repo, version)
@@ -73,6 +81,21 @@ def gethash(user, repo, version):
         return hashes, total_hash
 
 
-# my_functions = list(globals().items())[12:]
-# print({a.replace('_', '-'): b.__name__ for a, b in my_functions})
+def _get_tar_version(user, repo, version):
+    dest_path = f'repos/{user}/{repo}/{version}/'
+
+    # I will remove this code later, when on upload, tar archive will create automatically
+    if version + '.tar.gz' not in os.listdir(dest_path):
+        tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
+
+    return f'repos/{user}/{repo}/{version}.tar.gz'
+
+
+def download(conn, user, repo, version):
+    assert user_exists(user) and exists(user, repo) and version_exists(user, repo, version)
+
+    target = _get_tar_version(user, repo, version)
+
+    trnsmsn = transmission.Transmission(conn, target)
+    trnsmsn.start()
 

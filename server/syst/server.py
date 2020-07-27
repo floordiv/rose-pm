@@ -1,6 +1,8 @@
 import json
 import socket
+import inspect
 import datetime
+from time import sleep
 from threading import Thread
 from sys import exit as abort  # грех
 
@@ -22,8 +24,18 @@ class RequestsDistributor:
             return conn.send({'type': 'fail', 'desc': 'invalid-request-type'})
 
         try:
-            data = self.dmap[rtype](*request['payload'])
-            conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
+            func = self.dmap[rtype]
+            args = request['payload']
+
+            if list(inspect.signature(func).parameters)[0] == 'conn':
+                args.insert(0, conn)
+
+            data = func(*args)
+
+            if data is not None:
+                print(data, 'lol')
+
+                conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
         except Exception as exc:
             conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
 
@@ -70,11 +82,13 @@ class MainServer:
                     continue
 
                 self.updates.append([conn, jsonified])
-        except BrokenPipeError:
-            print(f'[{datetime.datetime.now()}[ [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
+        except (BrokenPipeError, ConnectionResetError):
+            print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
             conn.close()
 
     def get_updates(self):
+        while not len(self.updates): sleep(0.1)
+
         updates = self.updates[:]   # copy list
         self.updates = []
 
@@ -91,7 +105,8 @@ def worker(mainserver=None, requests_handler=None, dmap=None):
             'repo-exists': repo.exists,
             'version-exists': repo.version_exists,
             'user-exists': repo.user_exists,
-            'get-version-hash': repo.gethash
+            'get-version-hash': repo.gethash,
+            'download': repo.download,
         }
 
     if requests_handler is None:

@@ -1,11 +1,9 @@
 from time import time
 from rcore import Session
+import transmission
 
 
 session = Session()
-
-begin = time()
-print(session.request('get-version-hash', login='floordiv', repo='repos_docs', version='anyversion1'))
-end = time()
-
-print('Time went:', end - begin, 'secs')
+session.request('download', False, login='floordiv', repo='repos_docs', version='anyversion1')
+trnsmsn = transmission.Transmission(session, 'floordiv', 'repos_docs', 'anyversion1')
+trnsmsn.start()
