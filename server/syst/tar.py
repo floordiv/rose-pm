@@ -4,15 +4,21 @@ import tarfile
 
 
 def pack_dir(name, dirname, dist):
+    print('holabola?')
     arc_name = os.path.join(dist, name) + '.tar.gz'
 
     try:
+        print(arc_name, os.getcwd())
         tar = tarfile.open(arc_name, 'x:gz')
+        print(2)
         tar.add(dirname)
+        print(3)
         tar.close()
+        print('ok.')
     except FileExistsError:
-        os.remove(arc_name)
-        return pack_dir(name, dirname, dist)
+        print('yes, I do')
+
+    print('ahaha')
 
     return arc_name
 

@@ -5,7 +5,6 @@ import datetime
 from time import sleep
 from threading import Thread
 from sys import exit as abort  # грех
-from traceback import format_exc
 
 import syst.repo as repo
 

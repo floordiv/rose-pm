@@ -2,7 +2,7 @@ import utils
 from transmission import DownloadTransmission, UploadTransmission
 
 
-def install_package(session, dest_path, *packages, reinstall=False):
+def install(session, dest_path, *packages, reinstall_package=False):
     packages_to_install = utils.parse_packages(packages)
 
     for author, package in packages_to_install:
@@ -19,7 +19,7 @@ def install_package(session, dest_path, *packages, reinstall=False):
         trnsmsn.start()
 
 
-def reinstall_package(session, dest_path, *packages):
+def reinstall(session, dest_path, *packages):
     # this installs modules, but ignores previously installed versions
 
-    install_package(session, dest_path, *packages, reinstall=True)
+    install(session, dest_path, *packages, reinstall_package=True)

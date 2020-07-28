@@ -18,7 +18,7 @@ def parse_packages(packages):
 
 
 def isinstalled(dest_path, repo):
-    return repo in os.listdir(dest_path)
+    return os.path.exists(dest_path) and repo in os.listdir(dest_path)
 
 
 def load_version_info(repo_path):

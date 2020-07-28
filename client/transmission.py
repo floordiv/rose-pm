@@ -3,6 +3,7 @@ import json
 import time
 import shutil
 import tarfile
+from socket import timeout
 from datetime import datetime
 
 
@@ -59,7 +60,12 @@ class DownloadTransmission:
     def start(self):
         self.sock.settimeout(3)
 
-        data = self.sock.recv(1024)
+        try:
+            data = self.sock.recv(1024)
+        except timeout:
+            print('[ROSE] Server does not responds')
+            return
+
         init_packet = json.loads(data.decode())
 
         if init_packet['type'] == 'trnsmsn-init':

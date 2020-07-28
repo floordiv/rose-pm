@@ -23,7 +23,7 @@ def get_versions(user, repo):
 
 def get_version(user, repo, version):
     if version_exists(user, repo, version):
-        version_path = _get_version_path(user, repo, version)
+        version, version_path = _get_version_path(user, repo, version)
 
         return [f'{version_path}/{file}' for file in os.listdir(version_path)]
 
@@ -92,10 +92,13 @@ def gethash(user, repo, version):
 
 def download(conn, user, repo, version):
     assert user_exists(user) and exists(user, repo) and version_exists(user, repo, version)
+    print('oka')
 
     target = _get_tar_version(user, repo, version)
+    print('why')
 
     trnsmsn = transmission.UploadTransmission(conn, target)
+    print('ok, but...')
     trnsmsn.start()
 
 
@@ -109,14 +112,18 @@ def _get_version_path(user, repo, version):
         newest = repo_info['last-version']
         return f'repos/{user}/{repo}/{newest}'
 
-    return f'repos/{user}/{repo}/{version}'
+    return version, f'repos/{user}/{repo}/{version}'
 
 
 def _get_tar_version(user, repo, version):
-    dest_path = _get_version_path(user, repo, version)
+    version, dest_path = _get_version_path(user, repo, version)
+    print('btw')
 
     # I will remove this code later, when on upload, tar archive will create automatically
-    if version + '.tar.gz' not in os.listdir(dest_path):
+    if version + '.tar.gz' not in os.listdir(f'repos/{user}/{repo}'):
+        print('nano!')
         tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
+        print('olololo')
 
+    print('lol?')
     return f'repos/{user}/{repo}/{version}.tar.gz'

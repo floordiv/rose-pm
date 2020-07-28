@@ -22,4 +22,4 @@ if __name__ == '__main__':
         sys.exit(1)
 
     command_function = commands.__dict__[command]
-    command_function(sess, 'installed', *args)
+    command_function(sess, 'installed', *cmdargs)
