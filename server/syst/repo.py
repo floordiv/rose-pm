@@ -110,20 +110,17 @@ def _get_version_path(user, repo, version):
             repo_info = json.load(repo_info)
 
         newest = repo_info['last-version']
-        return f'repos/{user}/{repo}/{newest}'
+        return newest, f'repos/{user}/{repo}/{newest}'
 
     return version, f'repos/{user}/{repo}/{version}'
 
 
 def _get_tar_version(user, repo, version):
     version, dest_path = _get_version_path(user, repo, version)
-    print('btw')
 
     # I will remove this code later, when on upload, tar archive will create automatically
     if version + '.tar.gz' not in os.listdir(f'repos/{user}/{repo}'):
-        print('nano!')
         tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
         print('olololo')
 
-    print('lol?')
     return f'repos/{user}/{repo}/{version}.tar.gz'

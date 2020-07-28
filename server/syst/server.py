@@ -5,6 +5,7 @@ import datetime
 from time import sleep
 from threading import Thread
 from sys import exit as abort  # грех
+from traceback import format_exc
 
 import syst.repo as repo
 
@@ -39,14 +40,15 @@ class RequestsDistributor:
 
             if data is not None:
                 conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
-        except Exception as exc:
-            try:
-                conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
-            except OSError:
-                conn.close()
+        except (OSError, BrokenPipeError, ConnectionResetError):
+            conn.close()
 
-                client_ip, client_port = conn.getpeername()
-                print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
+            client_ip, client_port = conn.getpeername()
+            print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
+        except Exception as exc:
+            print(format_exc())
+
+            conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
 
 
 class MainServer:

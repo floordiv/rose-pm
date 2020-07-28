@@ -1,10 +1,10 @@
 import os
 import shutil
 import tarfile
+from traceback import format_exc
 
 
 def pack_dir(name, dirname, dist):
-    print('holabola?')
     arc_name = os.path.join(dist, name) + '.tar.gz'
 
     try:
@@ -16,9 +16,9 @@ def pack_dir(name, dirname, dist):
         tar.close()
         print('ok.')
     except FileExistsError:
-        print('yes, I do')
+        pass
 
-    print('ahaha')
+    print('ahahah')
 
     return arc_name
 
