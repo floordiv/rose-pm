@@ -23,7 +23,16 @@ def get_versions(user, repo):
 
 def get_version(user, repo, version):
     if version_exists(user, repo, version):
-        return [f'repos/{user}/{repo}/{version}/{file}' for file in os.listdir(f'repos/{user}/{repo}/{version }')]
+        version_path = _get_version_path(user, repo, version)
+
+        return [f'{version_path}/{file}' for file in os.listdir(version_path)]
+
+
+def get_newest_version(user, repo):
+    with open(f'repos/{user}/{repo}/.repo') as repo_info:
+        repo_info = json.load(repo_info)
+
+    return repo_info['last-version']
 
 
 def exists(user, repo):
@@ -31,7 +40,7 @@ def exists(user, repo):
 
 
 def version_exists(user, repo, version):
-    return user_exists(user) and exists(user, repo) and version in get_versions(user, repo)
+    return (user_exists(user) and exists(user, repo) and version in get_versions(user, repo)) or version == '&newest'
 
 
 def user_exists(user):
@@ -81,16 +90,6 @@ def gethash(user, repo, version):
         return hashes, total_hash
 
 
-def _get_tar_version(user, repo, version):
-    dest_path = f'repos/{user}/{repo}/{version}/'
-
-    # I will remove this code later, when on upload, tar archive will create automatically
-    if version + '.tar.gz' not in os.listdir(dest_path):
-        tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
-
-    return f'repos/{user}/{repo}/{version}.tar.gz'
-
-
 def download(conn, user, repo, version):
     assert user_exists(user) and exists(user, repo) and version_exists(user, repo, version)
 
@@ -98,3 +97,26 @@ def download(conn, user, repo, version):
 
     trnsmsn = transmission.Transmission(conn, target)
     trnsmsn.start()
+
+
+def _get_version_path(user, repo, version):
+    assert user_exists(user) and exists(user, repo)
+
+    if version == '&newest':
+        with open(f'repos/{user}/{repo}/.repo') as repo_info:
+            repo_info = json.load(repo_info)
+
+        newest = repo_info['last-version']
+        return f'repos/{user}/{repo}/{newest}'
+
+    return f'repos/{user}/{repo}/{version}'
+
+
+def _get_tar_version(user, repo, version):
+    dest_path = _get_version_path(user, repo, version)
+
+    # I will remove this code later, when on upload, tar archive will create automatically
+    if version + '.tar.gz' not in os.listdir(dest_path):
+        tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
+
+    return f'repos/{user}/{repo}/{version}.tar.gz'
