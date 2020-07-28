@@ -1,8 +1,8 @@
 import os
 import json
+import time
 import shutil
 import tarfile
-from datetime import datetime
 
 
 class Transmission:
@@ -62,6 +62,15 @@ class Transmission:
 
         shutil.rmtree(self.dest + '/repos')
         os.remove(os.path.join(self.dest, self.filename))
+
+        version_info = {
+            'version': self.version,
+            'author': self.author,
+            'download-date': time.time()
+        }
+
+        with open(self.dest + '/' + self.repo + '/.version', 'w') as version_info_file:
+            json.dump(version_info, version_info_file)
 
         print('[ROSE] Installed')
 
