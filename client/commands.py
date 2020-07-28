@@ -1,5 +1,5 @@
 import utils
-from transmission import Transmission
+from transmission import DownloadTransmission, UploadTransmission
 
 
 def install_package(session, dest_path, *packages, reinstall=False):
@@ -15,7 +15,7 @@ def install_package(session, dest_path, *packages, reinstall=False):
         session.request('download', login=author, repo=package, version='&newest')
 
         # wow! Transmission is so easy to-do!
-        trnsmsn = Transmission(session, author, package, '&newest', dest_path)
+        trnsmsn = DownloadTransmission(session, author, package, '&newest', dest_path)
         trnsmsn.start()
 
 

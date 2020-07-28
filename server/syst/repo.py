@@ -95,7 +95,7 @@ def download(conn, user, repo, version):
 
     target = _get_tar_version(user, repo, version)
 
-    trnsmsn = transmission.Transmission(conn, target)
+    trnsmsn = transmission.UploadTransmission(conn, target)
     trnsmsn.start()
 
 
