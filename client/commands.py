@@ -22,4 +22,4 @@ def install_package(session, dest_path, *packages, reinstall=False):
 def reinstall_package(session, dest_path, *packages):
     # this installs modules, but ignores previously installed versions
 
-    ...
+    install_package(session, dest_path, *packages, reinstall=True)

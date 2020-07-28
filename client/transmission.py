@@ -3,9 +3,46 @@ import json
 import time
 import shutil
 import tarfile
+from datetime import datetime
 
 
-class Transmission:
+"""
+You may ask me, why did I copypaste the same module to the client, and server folders?
+
+Cause I don't wanna distribute Rose with server inside, server and client are independent packages
+"""
+
+
+class UploadTransmission:
+    def __init__(self, conn, filename, chunk_size=1024):
+        self.conn = conn
+        self.filename = filename
+        self.chunk_size = chunk_size
+
+    def start(self):
+        print(f'[{datetime.now()}] [TRANSMISSION] Started')
+
+        with open(self.filename, 'rb') as file:
+            chunks = list(iter(lambda: file.read(self.chunk_size), b''))
+
+        chunks_count = len(chunks)
+
+        self.conn.send(json.dumps(
+            {'type': 'trnsmsn-init',
+             'packets': chunks_count,
+             'file': os.path.basename(self.filename),
+             'chunk': self.chunk_size}
+        ).encode())
+
+        self.conn.recv(10)
+
+        for chunk_index, chunk in enumerate(chunks, start=1):
+            self.conn.send(chunk)
+            print(f'[{datetime.now()}] [TRANSMISSION] Sent', chunk_index, 'chunks of', chunks_count)
+        print(f'[{datetime.now()}] [TRANSMISSION] Completed')
+
+
+class DownloadTransmission:
     def __init__(self, session, author, repo, version, dest='installed'):
         if not os.path.exists(dest):
             os.mkdir(dest)
