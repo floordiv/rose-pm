@@ -25,6 +25,7 @@ class RequestsDistributor:
         """
 
         rtype = request['type']
+        client_ip, client_port = conn.getpeername()
 
         if rtype not in self.dmap:
             return conn.send(json.dumps({'type': 'fail', 'desc': 'invalid-request-type'}).encode())
@@ -42,8 +43,6 @@ class RequestsDistributor:
                 conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
         except (OSError, BrokenPipeError, ConnectionResetError):
             conn.close()
-
-            client_ip, client_port = conn.getpeername()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
         except Exception as exc:
             print(format_exc())
@@ -84,18 +83,21 @@ class MainServer:
 
                 try:
                     decoded = data.decode()
+
+                    if not decoded:
+                        raise OSError
+
                     jsonified = json.loads(decoded)
 
                     if 'type' not in jsonified or 'payload' not in jsonified:
                         raise json.JSONDecodeError
                 except json.JSONDecodeError:
-                    # print(decoded)
                     conn.send(json.dumps({'type': 'fail', 'desc': 'bad-request'}).encode())
                     continue
 
                 self.updates.append([conn, jsonified])
-        except (BrokenPipeError, ConnectionResetError):
-            print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
+        except (OSError, BrokenPipeError, ConnectionResetError):
+            # print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
             conn.close()
 
     def get_updates(self):
@@ -105,6 +107,10 @@ class MainServer:
         self.updates = []
 
         return updates
+
+    def __del__(self):
+        print(f'[{datetime.datetime.now()}] [MAINSERVER] Stopping...')
+        self.sock.close()
 
 
 def worker(mainserver=None, requests_handler=None, dmap=None):

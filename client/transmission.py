@@ -35,7 +35,10 @@ class UploadTransmission:
              'chunk': self.chunk_size}
         ).encode())
 
-        self.conn.recv(10)
+        data = self.conn.recv(10)
+
+        if not data:  # client closed connection
+            raise OSError
 
         for chunk_index, chunk in enumerate(chunks, start=1):
             self.conn.send(chunk)
@@ -58,7 +61,7 @@ class DownloadTransmission:
         self.chunksize = 1024
 
     def start(self):
-        self.sock.settimeout(3)
+        self.sock.settimeout(5)
 
         try:
             data = self.sock.recv(1024)

@@ -12,7 +12,7 @@ def install(session, dest_path, *packages, reinstall_package=False):
 
         print(f'[ROSE] Installing package: {author}:{package}')
 
-        session.request('download', login=author, repo=package, version='&newest')
+        session.request('download', wait_response=False, login=author, repo=package, version='&newest')
 
         # wow! Transmission is so easy to-do!
         trnsmsn = DownloadTransmission(session, author, package, '&newest', dest_path)

@@ -92,13 +92,10 @@ def gethash(user, repo, version):
 
 def download(conn, user, repo, version):
     assert user_exists(user) and exists(user, repo) and version_exists(user, repo, version)
-    print('oka')
 
     target = _get_tar_version(user, repo, version)
-    print('why')
 
     trnsmsn = transmission.UploadTransmission(conn, target)
-    print('ok, but...')
     trnsmsn.start()
 
 
@@ -121,6 +118,5 @@ def _get_tar_version(user, repo, version):
     # I will remove this code later, when on upload, tar archive will create automatically
     if version + '.tar.gz' not in os.listdir(f'repos/{user}/{repo}'):
         tar.pack_dir(version, dest_path, f'repos/{user}/{repo}')
-        print('olololo')
 
     return f'repos/{user}/{repo}/{version}.tar.gz'

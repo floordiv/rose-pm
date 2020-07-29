@@ -8,17 +8,11 @@ def pack_dir(name, dirname, dist):
     arc_name = os.path.join(dist, name) + '.tar.gz'
 
     try:
-        print(arc_name, os.getcwd())
         tar = tarfile.open(arc_name, 'x:gz')
-        print(2)
         tar.add(dirname)
-        print(3)
         tar.close()
-        print('ok.')
     except FileExistsError:
         pass
-
-    print('ahahah')
 
     return arc_name
 
