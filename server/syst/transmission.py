@@ -50,6 +50,9 @@ class DownloadTransmission:
     def __init__(self, session, author, repo, version, dest='installed'):
         if not os.path.exists(dest):
             os.mkdir(dest)
+        if version == '&newest':
+            # version = session.request('get-newest-version', login=author, repo=repo)
+            version = 'anyversion2'
 
         self.sock = session.get_sock()
         self.dest = dest
@@ -61,7 +64,7 @@ class DownloadTransmission:
         self.chunksize = 1024
 
     def start(self):
-        self.sock.settimeout(5)
+        self.sock.settimeout(3)
 
         try:
             data = self.sock.recv(1024)
@@ -116,7 +119,7 @@ class DownloadTransmission:
         }
 
         with open(self.dest + '/' + self.repo + '/.version', 'w') as version_info_file:
-            json.dump(version_info, version_info_file)
+            json.dump(version_info, version_info_file, indent=4)
 
         print('[ROSE] Installed')
 

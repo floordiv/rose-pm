@@ -11,15 +11,16 @@ class Session:
         self.sock.connect(pm_addr)
 
         self.args_for_rtypes = {
-            'get-users':        (),
-            'get-repos':        ('login',),
-            'get-versions':     ('login', 'repo'),
-            'get-version':      ('login', 'repo', 'version'),
-            'repo-exists':      ('login', 'repo'),
-            'version-exists':   ('login', 'repo', 'version'),
-            'user-exists':      ('login',),
-            'get-version-hash': ('login', 'repo', 'version'),
-            'download':         ('login', 'repo', 'version')
+            'get-users':            (),
+            'get-repos':            ('login',),
+            'get-versions':         ('login', 'repo'),
+            'get-version':          ('login', 'repo', 'version'),
+            'repo-exists':          ('login', 'repo'),
+            'version-exists':       ('login', 'repo', 'version'),
+            'user-exists':          ('login',),
+            'get-version-hash':     ('login', 'repo', 'version'),
+            'get-newest-version':   ('login', 'repo'),
+            'download':             ('login', 'repo', 'version')
         }
 
     def request(self, rtype, wait_response=True, direct_api_call=False, **payload):

@@ -44,6 +44,8 @@ class RequestsDistributor:
         except (OSError, BrokenPipeError, ConnectionResetError):
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
+        except AssertionError:
+            conn.send(json.dumps({'type': 'fail', 'data': 'bad-data'}).encode())
         except Exception as exc:
             print(format_exc())
 
@@ -97,7 +99,7 @@ class MainServer:
 
                 self.updates.append([conn, jsonified])
         except (OSError, BrokenPipeError, ConnectionResetError):
-            # print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
+            print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
             conn.close()
 
     def get_updates(self):
@@ -124,6 +126,7 @@ def worker(mainserver=None, requests_handler=None, dmap=None):
             'version-exists': repo.version_exists,
             'user-exists': repo.user_exists,
             'get-version-hash': repo.gethash,
+            'get-newest-version': repo.get_newest_version,
             'download': repo.download,
         }
 
