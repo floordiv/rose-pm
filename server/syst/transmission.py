@@ -1,8 +1,10 @@
 import os
+import sys
 import json
 import time
 import shutil
 import tarfile
+import hashlib
 from socket import timeout
 from datetime import datetime
 
@@ -17,20 +19,22 @@ Cause I don't wanna distribute Rose with server inside, server and client are in
 class UploadTransmission:
     def __init__(self, conn, filename, chunk_size=2048):
         self.conn = conn
+        self.addr = conn.getpeername()
         self.filename = filename
         self.chunk_size = chunk_size
 
     def start(self):
-        print(f'[{datetime.now()}] [TRANSMISSION] Started')
+        print(f'[{datetime.now()}] [TRANSMISSION] Started: {self.addr[0]}:{self.addr[1]}')
 
         with open(self.filename, 'rb') as file:
             chunks = list(iter(lambda: file.read(self.chunk_size), b''))
 
         chunks_count = len(chunks)
+        total_bytes = (self.chunk_size * (chunks_count - 1)) + len(chunks[-1])
 
         self.conn.send(json.dumps(
             {'type': 'trnsmsn-init',
-             'packets': chunks_count,
+             'bytes': total_bytes,
              'file': os.path.basename(self.filename),
              'chunk': self.chunk_size}
         ).encode())
@@ -42,8 +46,9 @@ class UploadTransmission:
 
         for chunk_index, chunk in enumerate(chunks, start=1):
             self.conn.send(chunk)
-            print(f'[{datetime.now()}] [TRANSMISSION] Sent', chunk_index, 'chunks of', chunks_count)
-        print(f'[{datetime.now()}] [TRANSMISSION] Completed')
+            # print(f'[{datetime.now()}] [TRANSMISSION] Sent', chunk_index, 'chunks of', chunks_count)
+
+        print(f'[{datetime.now()}] [TRANSMISSION] Completed: {self.addr[0]}:{self.addr[1]}')
 
 
 class DownloadTransmission:
@@ -59,9 +64,9 @@ class DownloadTransmission:
         self.repo = repo
         self.version = version
         self.author = author
-        self.packets = None
+        self.bytes = None
         self.filename = 'unknown.tar.gz'
-        self.chunksize = 1024
+        self.chunksize = 2048
 
     def start(self):
         self.sock.settimeout(3)
@@ -75,7 +80,7 @@ class DownloadTransmission:
         init_packet = json.loads(data.decode())
 
         if init_packet['type'] == 'trnsmsn-init':
-            self.packets = init_packet['packets']
+            self.bytes = init_packet['bytes']
             self.filename = init_packet['file']
             self.chunksize = init_packet['chunk']
 
@@ -86,12 +91,17 @@ class DownloadTransmission:
             return
 
         with open(os.path.join(self.dest, self.filename), 'wb') as tar_file:
-            for i in range(self.packets):
-                source = self.sock.recv(self.chunksize)
-                tar_file.write(source)
+            total_bytes_received = 0
 
-                print('[ROSE] Received', i + 1, 'packets of', self.packets)
-            print('[ROSE] Transmission completed')
+            while total_bytes_received < self.bytes:
+                source = self.sock.recv(self.bytes - total_bytes_received)
+                tar_file.write(source)
+                total_bytes_received += len(source)
+
+                sys.stdout.write(f'\r[ROSE] Received {total_bytes_received} bytes of {self.bytes}')
+                sys.stdout.flush()
+
+            print('\n[ROSE] Transmission completed')
 
         self.unpack_tar()
 
@@ -115,7 +125,6 @@ class DownloadTransmission:
         except OSError:
             shutil.rmtree(self.dest + '/' + self.repo)
             os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
-            # shutil.move(self.dest + '/' + self.version, self.dest + '/' + self.repo)
 
         shutil.rmtree(self.dest + '/repos')
         os.remove(os.path.join(self.dest, self.filename))
