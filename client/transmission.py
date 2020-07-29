@@ -15,7 +15,7 @@ Cause I don't wanna distribute Rose with server inside, server and client are in
 
 
 class UploadTransmission:
-    def __init__(self, conn, filename, chunk_size=1024):
+    def __init__(self, conn, filename, chunk_size=2048):
         self.conn = conn
         self.filename = filename
         self.chunk_size = chunk_size

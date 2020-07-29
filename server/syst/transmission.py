@@ -15,7 +15,7 @@ Cause I don't wanna distribute Rose with server inside, server and client are in
 
 
 class UploadTransmission:
-    def __init__(self, conn, filename, chunk_size=1024):
+    def __init__(self, conn, filename, chunk_size=2048):
         self.conn = conn
         self.filename = filename
         self.chunk_size = chunk_size
@@ -105,9 +105,17 @@ class DownloadTransmission:
         if not os.path.exists(self.dest + '/' + self.repo):
             os.mkdir(self.dest + '/' + self.repo)
 
-        shutil.move(f'{self.dest}/repos/{self.author}/{self.repo}/{self.version}', self.dest)
+        try:
+            shutil.move(f'{self.dest}/repos/{self.author}/{self.repo}/{self.version}', self.dest)
+        except shutil.Error:
+            shutil.copytree(f'{self.dest}/repos/{self.author}/{self.repo}/{self.version}', self.dest)
 
-        os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
+        try:
+            os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
+        except OSError:
+            shutil.rmtree(self.dest + '/' + self.repo)
+            os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
+            # shutil.move(self.dest + '/' + self.version, self.dest + '/' + self.repo)
 
         shutil.rmtree(self.dest + '/repos')
         os.remove(os.path.join(self.dest, self.filename))

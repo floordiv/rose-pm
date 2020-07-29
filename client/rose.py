@@ -37,7 +37,7 @@ if __name__ == '__main__':
             else:
                 val = cmdargs[cmdargs.index(arg) + 1]
                 config[dest_arg] = key(val)
-                
+
                 cmdargs.remove(val)
 
             cmdargs.remove(arg)
