@@ -33,16 +33,19 @@ class Session:
 
         self.sock.send(json.dumps({'type': rtype, 'payload': payload}).encode())
 
-        if wait_response:   # this is kinda get-request
+        if wait_response:
             source = b''
 
+            # this may be ugly-looking, but if we don't do this,
+            # we'll have troubles with big packets receiving
+            # for example, receiving huge repos' hashes
             while source.count(b'|') < 2:
                 source += self.sock.recv(8)
 
             next_packet_len = int(source[1:-1])
             self.sock.send(b'ok')
 
-            # we received packet length, now - it's time to receive packet
+            # we received packet's length, now - it's time to receive our packet
             raw_response = b''
 
             while len(raw_response) < next_packet_len:

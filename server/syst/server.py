@@ -1,3 +1,4 @@
+import os
 import json
 import socket
 import inspect
@@ -115,9 +116,12 @@ class MainServer:
 
         return updates
 
-    def __del__(self):
-        print(f'[{datetime.datetime.now()}] [MAINSERVER] Stopping...')
+    def stop(self):
+        print(f'\n[{datetime.datetime.now()}] [MAINSERVER] Stopping...')
         self.sock.close()
+
+    def __del__(self):
+        self.stop()
 
 
 def worker(mainserver=None, requests_handler=None, dmap=None):
@@ -142,8 +146,12 @@ def worker(mainserver=None, requests_handler=None, dmap=None):
         mainserver.init()
         mainserver.start()
 
-    while True:
-        updates = mainserver.get_updates()
+    try:
+        while True:
+            updates = mainserver.get_updates()
 
-        for conn, request in updates:
-            requests_handler.handle(conn, request)
+            for conn, request in updates:
+                requests_handler.handle(conn, request)
+    except KeyboardInterrupt:
+        mainserver.stop()
+        os.abort()
