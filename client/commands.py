@@ -65,3 +65,5 @@ def check(session, config, *repos):
 
         if newest_version['data'][1] != local_hash:
             print(f'[ROSE] {repo}: updates are available')
+        else:
+            print(f'[ROSE] {repo}: you have the newest version installed')

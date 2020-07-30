@@ -46,7 +46,6 @@ class UploadTransmission:
 
         for chunk_index, chunk in enumerate(chunks, start=1):
             self.conn.send(chunk)
-            # print(f'[{datetime.now()}] [TRANSMISSION] Sent', chunk_index, 'chunks of', chunks_count)
 
         print(f'[{datetime.now()}] [TRANSMISSION] Completed: {self.addr[0]}:{self.addr[1]}')
 
@@ -56,8 +55,7 @@ class DownloadTransmission:
         if not os.path.exists(dest):
             os.mkdir(dest)
         if version == '&newest':
-            # version = session.request('get-newest-version', login=author, repo=repo)
-            version = 'anyversion2'
+            version = session.request('get-newest-version', login=author, repo=repo)
 
         self.sock = session.get_sock()
         self.dest = dest
