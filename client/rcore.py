@@ -34,9 +34,21 @@ class Session:
         self.sock.send(json.dumps({'type': rtype, 'payload': payload}).encode())
 
         if wait_response:   # this is kinda get-request
-            raw = self.sock.recv(1024)
-            response = json.loads(raw.decode())
+            source = b''
 
+            while source.count(b'|') < 2:
+                source += self.sock.recv(8)
+
+            next_packet_len = int(source[1:-1])
+            self.sock.send(b'ok')
+
+            # we received packet length, now - it's time to receive packet
+            raw_response = b''
+
+            while len(raw_response) < next_packet_len:
+                raw_response += self.sock.recv(1024)
+
+            response = json.loads(raw_response.decode())
             return response
 
     def validate_args(self, rtype, args):

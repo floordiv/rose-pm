@@ -50,8 +50,9 @@ def gethash(dest_path, repo):
         hashes = {}
 
         for file in files:
-            with open(file, 'rb') as file_source:
-                hashes[file] = hashlib.sha256(bytes(file_source)).hexdigest()
+            if file != '.version':
+                with open(dest_path + '/' + repo + '/' + file, 'rb') as file_source:
+                    hashes[file] = hashlib.sha256(file_source.read()).hexdigest()
 
         total_hash = hashlib.sha256(bytes(''.join(hashes.values()).encode())).hexdigest()
 

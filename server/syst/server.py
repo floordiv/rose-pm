@@ -28,7 +28,7 @@ class RequestsDistributor:
         client_ip, client_port = conn.getpeername()
 
         if rtype not in self.dmap:
-            return conn.send(json.dumps({'type': 'fail', 'desc': 'invalid-request-type'}).encode())
+            return conn.send(json.dumps({'type': 'fail', 'data': 'invalid-request-type'}).encode())
 
         try:
             func = self.dmap[rtype]
@@ -40,7 +40,12 @@ class RequestsDistributor:
             data = func(*args)
 
             if data is not None:
-                conn.send(json.dumps({'type': 'succ', 'data': data}).encode())
+                response = json.dumps({'type': 'succ', 'data': data}).encode()
+                response_bytes_len = len(bytes(response))
+
+                conn.send(f'|{response_bytes_len}|'.encode())
+                conn.recv(10)   # wait for client's previous packet processing approving
+                conn.send(response)
         except (OSError, BrokenPipeError, ConnectionResetError):
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
@@ -49,7 +54,7 @@ class RequestsDistributor:
         except Exception as exc:
             print(format_exc())
 
-            conn.send(json.dumps({'type': 'fail', 'desc': str(exc)}).encode())
+            conn.send(json.dumps({'type': 'fail', 'data': str(exc)}).encode())
 
 
 class MainServer:
@@ -94,7 +99,7 @@ class MainServer:
                     if 'type' not in jsonified or 'payload' not in jsonified:
                         raise json.JSONDecodeError
                 except json.JSONDecodeError:
-                    conn.send(json.dumps({'type': 'fail', 'desc': 'bad-request'}).encode())
+                    conn.send(json.dumps({'type': 'fail', 'data': 'bad-request'}).encode())
                     continue
 
                 self.updates.append([conn, jsonified])

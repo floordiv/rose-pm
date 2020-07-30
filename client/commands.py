@@ -1,3 +1,5 @@
+import json
+
 import utils
 from transmission import DownloadTransmission, UploadTransmission
 
@@ -33,3 +35,33 @@ def reinstall(session, config, *packages):
     config['reinstall'] = True
 
     install(session, config, *packages)
+
+
+def check(session, config, *repos):
+    for repo in repos:
+        if not utils.isinstalled(config['dest_path'], repo):
+            print(f'[ROSE] {repo}: not installed')
+
+        with open(config['dest_path'] + '/' + repo + '/.version') as repo_version:
+            repo_info = json.load(repo_version)
+
+        version = repo_info['version']
+        author = repo_info['author']
+
+        local_hash = utils.gethash(config['dest_path'], repo)[1]
+        server_response = session.request('get-version-hash', login=author, repo=repo, version=version)
+        newest_version = session.request('get-version-hash', login=author, repo=repo, version='&newest')
+
+        if server_response['type'] != 'succ' or newest_version['type'] != 'succ':
+            return print(f'[ROSE] Failed to check {repo}: {server_response["data"]}')
+
+        server_hash = server_response['data'][1]
+
+        if server_hash == local_hash:
+            print(f'[ROSE] {repo}: ok')
+        else:
+            print(f'[ROSE] hashes do not match')
+            print(server_hash, local_hash)
+
+        if newest_version['data'][1] != local_hash:
+            print(f'[ROSE] {repo}: updates are available')

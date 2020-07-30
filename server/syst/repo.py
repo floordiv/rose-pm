@@ -83,7 +83,7 @@ def gethash(user, repo, version):
 
         for file in files:
             with open(file, 'rb') as file_source:
-                hashes[file] = hashlib.sha256(bytes(file_source)).hexdigest()
+                hashes[file] = hashlib.sha256(file_source.read()).hexdigest()
 
         total_hash = hashlib.sha256(bytes(''.join(hashes.values()).encode())).hexdigest()
 
