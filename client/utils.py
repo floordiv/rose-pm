@@ -8,7 +8,7 @@ def parse_packages(packages):
 
     for package in packages:
         if ':' not in package:
-            author, package_name = 'floordiv', package   # by default, you are downloading packages from project's author
+            author, package_name = 'floordiv', package   # by default, you are downloading packages from rose's author
         else:
             author, package_name = package.split(':')
 
@@ -17,8 +17,14 @@ def parse_packages(packages):
     return parsed
 
 
-def isinstalled(dest_path, repo):
-    return os.path.exists(dest_path) and repo in os.listdir(dest_path)
+def isinstalled(dest_path, repo, author=None):
+    if author is None:
+        author_is_same = True
+    else:
+        repo_info = load_version_info(dest_path + '/' + repo)
+        author_is_same = author == repo_info['author']
+
+    return os.path.exists(dest_path) and repo in os.listdir(dest_path) and author_is_same
 
 
 def load_version_info(repo_path):
