@@ -21,13 +21,6 @@ def get_versions(user, repo):
     return os.listdir('repos/' + user + '/' + repo)
 
 
-def get_version(user, repo, version):
-    if version_exists(user, repo, version):
-        version, version_path = _get_version_path(user, repo, version)
-
-        return [f'{version_path}/{file}' for file in os.listdir(version_path)]
-
-
 def get_newest_version(user, repo):
     with open(f'repos/{user}/{repo}/.repo') as repo_info:
         repo_info = json.load(repo_info)
@@ -76,18 +69,10 @@ def get_version_info(user, repo, version):
 
 
 def gethash(user, repo, version):
-    files = get_version(user, repo, version)
+    version_name, path_to_tar = _get_version_path(user, repo, version)
 
-    if files:
-        hashes = {}
-
-        for file in files:
-            with open(file, 'rb') as file_source:
-                hashes[file] = hashlib.sha256(file_source.read()).hexdigest()
-
-        total_hash = hashlib.sha256(bytes(''.join(hashes.values()).encode())).hexdigest()
-
-        return hashes, total_hash
+    with open(path_to_tar, 'rb') as file_source:
+        return hashlib.sha256(file_source.read()).hexdigest()
 
 
 def download(conn, user, repo, version):
@@ -103,10 +88,9 @@ def _get_version_path(user, repo, version):
     assert user_exists(user) and exists(user, repo)
 
     if version == '&newest':
-        with open(f'repos/{user}/{repo}/.repo') as repo_info:
-            repo_info = json.load(repo_info)
-
+        repo_info = get_repo_info(user, repo)
         newest = repo_info['last-version']
+
         return newest, f'repos/{user}/{repo}/{newest}'
 
     return version, f'repos/{user}/{repo}/{version}'

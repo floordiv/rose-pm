@@ -1,9 +1,5 @@
 import os
-import sys
 import json
-import time
-import shutil
-import tarfile
 import hashlib
 from socket import timeout
 from datetime import datetime
@@ -94,5 +90,36 @@ class DownloadTransmission:
 
             print(f'[{datetime.now()}] [DOWNLOAD-TRANSMISSION] Completed')
 
+        self.install()
+
     def install(self):
-        ...
+        # update repo information
+        with open(f'repos/{self.author}/{self.repo}/.repo') as repo_info:
+            repo_data_original = json.load(repo_info)
+
+        repo_data_original['last-updated'] = datetime.now()
+        repo_data_original['last-version'] = self.version
+
+        with open(f'repos/{self.author}/{self.repo}/{self.filename}', 'rb') as version:
+            new_hash = hashlib.sha256(version.read()).hexdigest()
+
+        repo_data_original['versions-hashes'][self.version] = new_hash
+
+        # update user information
+
+        with open(f'repos/{self.author}/.user') as user_info:
+            user_data_original = json.load(user_info)
+
+        user_data_original['contributions'] += 1
+        user_data_original['last-contribute'] = datetime.now()
+
+        # push repo information
+
+        with open(f'repos/{self.author}/{self.repo}/.repo', 'w') as push_repo_info:
+            json.dump(repo_data_original, push_repo_info)
+
+        # push user information
+
+        with open(f'repos/{self.author}/.user', 'w') as push_user_info:
+            json.dump(user_data_original, push_user_info)
+
