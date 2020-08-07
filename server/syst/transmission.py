@@ -51,19 +51,15 @@ class UploadTransmission:
 
 
 class DownloadTransmission:
-    def __init__(self, session, author, repo, version, dest='installed'):
-        if not os.path.exists(dest):
-            os.mkdir(dest)
-        if version == '&newest':
-            version = session.request('get-newest-version', login=author, repo=repo)
-
-        self.sock = session.get_sock()
-        self.dest = dest
+    def __init__(self, conn, author, repo, version):
+        self.sock = conn
         self.repo = repo
         self.version = version
         self.author = author
+
+        self.dest = 'repos'
         self.bytes = None
-        self.filename = 'unknown.tar.gz'
+        self.filename = version + '.tar.gz'
         self.chunksize = 2048
 
     def start(self):
@@ -72,7 +68,7 @@ class DownloadTransmission:
         try:
             data = self.sock.recv(1024)
         except timeout:
-            print('[ROSE] Server does not responds')
+            print(f'[{datetime.now()}] [DOWNLOAD-TRANSMISSION] Client does not responds')
             return
 
         init_packet = json.loads(data.decode())
@@ -88,7 +84,7 @@ class DownloadTransmission:
             print('[ROSE] Transmission failed: did not receive initial packet')
             return
 
-        with open(os.path.join(self.dest, self.filename), 'wb') as tar_file:
+        with open('repos/' + self.version, 'wb') as tar_file:
             total_bytes_received = 0
 
             while total_bytes_received < self.bytes:
@@ -96,47 +92,7 @@ class DownloadTransmission:
                 tar_file.write(source)
                 total_bytes_received += len(source)
 
-                sys.stdout.write(f'\r[ROSE] Received {total_bytes_received} bytes of {self.bytes}')
-                sys.stdout.flush()
+            print(f'[{datetime.now()}] [DOWNLOAD-TRANSMISSION] Completed')
 
-            print('\n[ROSE] Transmission completed')
-
-        self.unpack_tar()
-
-    def unpack_tar(self):
-        if not os.path.exists(self.dest):
-            os.mkdir(self.dest)
-
-        tar = tarfile.open(os.path.join(self.dest, self.filename))
-        tar.extractall(self.dest)
-
-        if not os.path.exists(self.dest + '/' + self.repo):
-            os.mkdir(self.dest + '/' + self.repo)
-
-        try:
-            shutil.move(f'{self.dest}/repos/{self.author}/{self.repo}/{self.version}', self.dest)
-        except shutil.Error:
-            shutil.copytree(f'{self.dest}/repos/{self.author}/{self.repo}/{self.version}', self.dest)
-
-        try:
-            os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
-        except OSError:
-            shutil.rmtree(self.dest + '/' + self.repo)
-            os.rename(self.dest + '/' + self.version, self.dest + '/' + self.repo)
-
-        shutil.rmtree(self.dest + '/repos')
-        os.remove(os.path.join(self.dest, self.filename))
-
-        version_info = {
-            'version': self.version,
-            'author': self.author,
-            'download-date': time.time()
-        }
-
-        with open(self.dest + '/' + self.repo + '/.version', 'w') as version_info_file:
-            json.dump(version_info, version_info_file, indent=4)
-
-        print('[ROSE] Installed')
-
-    def rm_extension(self, filename, extension):
-        return filename[:-len(extension)]
+    def install(self):
+        ...

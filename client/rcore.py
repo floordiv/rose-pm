@@ -38,7 +38,7 @@ class Session:
 
             # this may be ugly-looking, but if we don't do this,
             # we'll have troubles with big packets receiving
-            # for example, receiving huge repos' hashes
+            # for example, receiving huge repos'x hashes
             while source.count(b'|') < 2:
                 source += self.sock.recv(8)
 
