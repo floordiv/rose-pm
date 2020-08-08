@@ -56,7 +56,6 @@ class DownloadTransmission:
         self.dest = 'repos'
         self.bytes = None
         self.filename = version + '.tar.gz'
-        self.chunksize = 2048
 
     def start(self):
         self.sock.settimeout(3)
@@ -72,7 +71,6 @@ class DownloadTransmission:
         if init_packet['type'] == 'trnsmsn-init':
             self.bytes = init_packet['bytes']
             self.filename = init_packet['file']
-            self.chunksize = init_packet['chunk']
 
             self.sock.send(b'ok')
         else:

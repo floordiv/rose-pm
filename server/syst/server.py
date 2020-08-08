@@ -9,6 +9,7 @@ from sys import exit as abort  # грех
 from traceback import format_exc
 
 import syst.repo as repo
+import syst.mproto as mproto
 
 
 DEFAULT_IP = '127.0.0.1'
@@ -42,11 +43,7 @@ class RequestsDistributor:
 
             if data is not None:
                 response = json.dumps({'type': 'succ', 'data': data}).encode()
-                response_bytes_len = len(bytes(response))
-
-                conn.send(f'|{response_bytes_len}|'.encode())
-                conn.recv(10)   # wait for client's previous packet processing approving
-                conn.send(response)
+                mproto.sendmsg(conn, response)
         except (OSError, BrokenPipeError, ConnectionResetError):
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
