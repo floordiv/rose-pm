@@ -51,6 +51,7 @@ class RequestsDistributor:
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
         except AssertionError:
+            print(format_exc())
             conn.send(json.dumps({'type': 'fail', 'data': 'bad-data'}).encode())
         except Exception as exc:
             print(format_exc())

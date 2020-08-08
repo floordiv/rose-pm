@@ -15,10 +15,9 @@ def get_repos(user):
 
 
 def get_versions(user, repo):
-    if not user_exists(user) or not exists(user, repo):
-        return None
+    assert user_exists(user) and exists(user, repo)
 
-    return os.listdir('repos/' + user + '/' + repo)
+    return [version for version in os.listdir('repos/' + user + '/' + repo) if version.endswith('.tar.gz')]
 
 
 def get_newest_version(user, repo):
@@ -33,7 +32,7 @@ def exists(user, repo):
 
 
 def version_exists(user, repo, version):
-    return (user_exists(user) and exists(user, repo) and version in get_versions(user, repo)) or version == '&newest'
+    return (user_exists(user) and exists(user, repo) and version + '.tar.gz' in get_versions(user, repo)) or version == '&newest'
 
 
 def user_exists(user):
@@ -43,6 +42,12 @@ def user_exists(user):
 def get_repo_info(user, repo):
     with open(f'repos/{user}/{repo}/.repo') as repo_inf:
         return json.load(repo_inf)
+
+
+def get_version(user, repo, version):
+    version_name, _ = _get_version_path(user, repo, version)
+
+    return version_name
 
 
 def get_version_info(user, repo, version):
