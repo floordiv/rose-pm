@@ -33,7 +33,7 @@ class Session:
         if payload is False and not direct_api_call:  # just if not payload won't work, cause an empty list (possible variant) is False, too
             raise UserWarning('invalid payload')
 
-        self.sock.send(json.dumps({'type': rtype, 'payload': payload}).encode())
+        mproto.sendmsg(self.sock, json.dumps({'type': rtype, 'payload': payload}))
 
         if wait_response:
             raw_response = mproto.recvmsg(self.sock)

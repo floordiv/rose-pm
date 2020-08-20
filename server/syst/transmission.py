@@ -120,4 +120,3 @@ class DownloadTransmission:
 
         with open(f'repos/{self.author}/.user', 'w') as push_user_info:
             json.dump(user_data_original, push_user_info)
-

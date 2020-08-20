@@ -48,11 +48,8 @@ class RequestsDistributor:
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
         except AssertionError:
-            print(format_exc())
             conn.send(json.dumps({'type': 'fail', 'data': 'bad-data'}).encode())
         except Exception as exc:
-            print(format_exc())
-
             conn.send(json.dumps({'type': 'fail', 'data': str(exc)}).encode())
 
 
@@ -85,7 +82,7 @@ class MainServer:
     def connections_handler(self, conn, addr):
         try:
             while True:
-                data = conn.recv(2048)
+                data = mproto.recvmsg(conn)
 
                 try:
                     decoded = data.decode()
