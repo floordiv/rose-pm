@@ -30,7 +30,7 @@ class RequestsDistributor:
         client_ip, client_port = conn.getpeername()
 
         if rtype not in self.dmap:
-            return conn.send(json.dumps({'type': 'fail', 'data': 'invalid-request-type'}).encode())
+            return mproto.sendmsg(conn, json.dumps({'type': 'fail', 'data': 'invalid-request-type'}).encode())
 
         try:
             func = self.dmap[rtype]
@@ -48,17 +48,34 @@ class RequestsDistributor:
             conn.close()
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {client_ip}:{client_port}')
         except AssertionError:
-            conn.send(json.dumps({'type': 'fail', 'data': 'bad-data'}).encode())
+            mproto.sendmsg(conn, json.dumps({'type': 'fail', 'data': 'bad-data'}).encode())
         except Exception as exc:
-            conn.send(json.dumps({'type': 'fail', 'data': str(exc)}).encode())
+            print(format_exc())
+            mproto.sendmsg(conn, json.dumps({'type': 'fail', 'data': str(exc)}).encode())
 
 
 class MainServer:
-    def __init__(self, ip=DEFAULT_IP, port=DEFAULT_PORT):
+    def __init__(self, ip=DEFAULT_IP, port=DEFAULT_PORT,
+                 rdistributor=None, dmap=None):
         self.ip, self.port = ip, port
-
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.updates = []
+
+        if dmap is None:
+            self.dmap = {
+                'get-users': repo.get_users,
+                'get-repos': repo.get_repos,
+                'get-versions': repo.get_versions,
+                'get-version': repo.get_version,
+                'repo-exists': repo.exists,
+                'version-exists': repo.version_exists,
+                'user-exists': repo.user_exists,
+                'get-version-hash': repo.gethash,
+                'get-newest-version': repo.get_newest_version,
+                'download': repo.download,
+            }
+
+        if rdistributor is None:
+            self.distributor = RequestsDistributor(self.dmap)
 
     def init(self):
         try:
@@ -68,9 +85,13 @@ class MainServer:
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Failed to init server: address already in use')
             abort(1)
 
-    def start(self):
-        Thread(target=self.connections_listener).start()
+    def start(self, threaded=True):
         print(f'[{datetime.datetime.now()}] [MAINSERVER] Successfully initialized and started on {self.ip}:{self.port}')
+
+        if threaded:
+            Thread(target=self.connections_listener).start()
+        else:
+            self.connections_listener()
 
     def connections_listener(self):
         while True:
@@ -84,6 +105,9 @@ class MainServer:
             while True:
                 data = mproto.recvmsg(conn)
 
+                if not data:
+                    raise ConnectionResetError
+
                 try:
                     decoded = data.decode()
 
@@ -95,21 +119,13 @@ class MainServer:
                     if 'type' not in jsonified or 'payload' not in jsonified:
                         raise json.JSONDecodeError
                 except json.JSONDecodeError:
-                    conn.send(json.dumps({'type': 'fail', 'data': 'bad-request'}).encode())
+                    mproto.sendmsg(conn, json.dumps({'type': 'fail', 'data': 'bad-request'}).encode())
                     continue
 
-                self.updates.append([conn, jsonified])
+                self.distributor.handle(conn, jsonified)
         except (OSError, BrokenPipeError, ConnectionResetError):
             print(f'[{datetime.datetime.now()}] [MAINSERVER] Disconnected: {addr[0]}:{addr[1]}')
             conn.close()
-
-    def get_updates(self):
-        while not len(self.updates): sleep(0.1)  # to avoid a ka-boom of the server
-
-        updates = self.updates[:]   # copy list
-        self.updates = []
-
-        return updates
 
     def stop(self):
         print(f'\n[{datetime.datetime.now()}] [MAINSERVER] Stopping...')
@@ -117,36 +133,3 @@ class MainServer:
 
     def __del__(self):
         self.stop()
-
-
-def worker(mainserver=None, requests_handler=None, dmap=None):
-    if dmap is None:
-        dmap = {
-            'get-users': repo.get_users,
-            'get-repos': repo.get_repos,
-            'get-versions': repo.get_versions,
-            'get-version': repo.get_version,
-            'repo-exists': repo.exists,
-            'version-exists': repo.version_exists,
-            'user-exists': repo.user_exists,
-            'get-version-hash': repo.gethash,
-            'get-newest-version': repo.get_newest_version,
-            'download': repo.download,
-        }
-
-    if requests_handler is None:
-        requests_handler = RequestsDistributor(dmap)
-    if mainserver is None:
-        mainserver = MainServer()
-        mainserver.init()
-        mainserver.start()
-
-    try:
-        while True:
-            updates = mainserver.get_updates()
-
-            for conn, request in updates:
-                requests_handler.handle(conn, request)
-    except KeyboardInterrupt:
-        mainserver.stop()
-        os.abort()

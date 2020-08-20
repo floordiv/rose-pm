@@ -21,7 +21,13 @@ def recvmsg(conn):
     @type conn: socket.socket
     """
 
-    msg_len = struct.unpack('>I', conn.recv(4))[0]  # [0] cause struct.unpack returns tuple
+    raw_msglen = conn.recv(4)
+
+    if not raw_msglen:
+        return b''
+
+    msg_len = struct.unpack('>I', raw_msglen)[0]  # [0] cause struct.unpack returns tuple
+
     conn.send(b'ok')    # we received and processed new message, so, let's approve it for server
 
     # it's time to receive our message!

@@ -4,6 +4,8 @@ import hashlib
 from socket import timeout
 from datetime import datetime
 
+import syst.mproto as mproto
+
 
 """
 You may ask me, why did I copypaste the same module to the client, and server folders?
@@ -28,19 +30,13 @@ class UploadTransmission:
         chunks_count = len(chunks)
         total_bytes = (self.chunk_size * (chunks_count - 1)) + len(chunks[-1])
 
-        self.conn.send(json.dumps(
+        mproto.sendmsg(self.conn, json.dumps(
             {'type': 'trnsmsn-init',
              'bytes': total_bytes,
              'file': os.path.basename(self.filename),
-             'chunk': self.chunk_size}
-        ).encode())
+             'chunk': self.chunk_size}).encode())
 
-        data = self.conn.recv(10)
-
-        if not data:  # client closed connection
-            raise OSError
-
-        for chunk_index, chunk in enumerate(chunks, start=1):
+        for chunk in chunks:
             self.conn.send(chunk)
 
         print(f'[{datetime.now()}] [TRANSMISSION] Completed: {self.addr[0]}:{self.addr[1]}')
@@ -61,7 +57,7 @@ class DownloadTransmission:
         self.sock.settimeout(3)
 
         try:
-            data = self.sock.recv(1024)
+            data = mproto.recvmsg(self.sock)
         except timeout:
             print(f'[{datetime.now()}] [DOWNLOAD-TRANSMISSION] Client does not responds')
             return
@@ -72,7 +68,7 @@ class DownloadTransmission:
             self.bytes = init_packet['bytes']
             self.filename = init_packet['file']
 
-            self.sock.send(b'ok')
+            # self.sock.send(b'ok')
         else:
             print(init_packet)
             print('[ROSE] Transmission failed: did not receive initial packet')
