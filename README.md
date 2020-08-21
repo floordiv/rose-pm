@@ -1,4 +1,6 @@
 # Rose
-One more Packet Manager, but written fully on Python
+One more Packet Manager, but written fully on python
 
-Server and client sides, has two servers: proxy-server for creating safety ssl-channel, and main server, which works threw the proxy-server
+To start server: go to the server folder, and run start.py
+
+For client-side usage: run rose.py with arguments
