@@ -12,7 +12,7 @@ import syst.repo as repo
 import syst.mproto as mproto
 
 
-DEFAULT_IP = '127.0.0.1'
+DEFAULT_IP = ''
 DEFAULT_PORT = 8888
 
 
@@ -86,7 +86,12 @@ class MainServer:
             abort(1)
 
     def start(self, threaded=True):
-        print(f'[{datetime.datetime.now()}] [MAINSERVER] Successfully initialized and started on {self.ip}:{self.port}')
+        if self.ip:
+            ip = self.ip
+        else:
+            ip = 'global'
+
+        print(f'[{datetime.datetime.now()}] [MAINSERVER] Successfully initialized and started on {ip}:{self.port}')
 
         if threaded:
             Thread(target=self.connections_listener).start()
