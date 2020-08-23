@@ -10,13 +10,15 @@ DEFAULT_PM_ADDR = ('127.0.0.1', 8888)
 config = {
     'dest_path': 'installed',
     'reinstall': False,
-    'pm_addr': DEFAULT_PM_ADDR
+    'pm_addr': DEFAULT_PM_ADDR,
+    'timeit': False,
 }
 
 parse_args = (
     ('--reinstall', 'flag', 'reinstall', lambda value: value == 'true'),
     ('--dest', 'keyvalue', 'dest_path', str),
-    ('--server', 'keyvalue', 'pm_addr', lambda value: value.split(':'))
+    ('--server', 'keyvalue', 'pm_addr', lambda value: value.split(':')),
+    ('--timeit', 'flag', 'timeit', lambda value: value == 'true')
 )
 
 

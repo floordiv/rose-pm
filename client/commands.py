@@ -26,7 +26,7 @@ def install(session, config, *packages):
         session.request('download', False, login=author, repo=package, version=version)
 
         # wow! Transmission is so easy to-do!
-        trnsmsn = DownloadTransmission(session, author, package, version, dest_path)
+        trnsmsn = DownloadTransmission(session, author, package, version, dest_path, timeit=config['timeit'])
         trnsmsn.start()
 
 

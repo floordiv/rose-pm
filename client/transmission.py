@@ -39,11 +39,6 @@ class UploadTransmission:
              'file': os.path.basename(self.filename),
              'chunk': self.chunk_size}).encode())
 
-        # data = self.conn.recv(10)
-
-        # if not data:  # client closed connection
-        #     raise OSError
-
         for chunk_index, chunk in enumerate(chunks, start=1):
             self.conn.send(chunk)
 
@@ -51,7 +46,7 @@ class UploadTransmission:
 
 
 class DownloadTransmission:
-    def __init__(self, session, author, repo, version, dest='installed'):
+    def __init__(self, session, author, repo, version, dest='installed', timeit=False):
         if not os.path.exists(dest):
             os.mkdir(dest)
         if version == '&newest':
@@ -65,6 +60,7 @@ class DownloadTransmission:
         self.bytes = None
         self.filename = 'unknown.tar.gz'
 
+        self.timeit = timeit
         self.samples = {
             'KB': 1024,
             'MB': 1048576,
@@ -72,7 +68,7 @@ class DownloadTransmission:
         }
 
     def start(self):
-        self.sock.settimeout(3)
+        self.sock.settimeout(5)
 
         try:
             data = mproto.recvmsg(self.sock)
@@ -86,11 +82,12 @@ class DownloadTransmission:
             self.bytes = init_packet['bytes']
             self.filename = init_packet['file']
         else:
-            print(init_packet)
             print('[ROSE] Transmission failed: did not receive initial packet')
             return
 
         value, name = self.convert_bytes(self.bytes)
+
+        begin = time.time()
 
         with open(os.path.join(self.dest, self.filename), 'wb') as tar_file:
             total_bytes_received = 0
@@ -114,7 +111,16 @@ class DownloadTransmission:
 
             print('\n[ROSE] Transmission completed')
 
+        transmission_end = time.time()
+
         self.unpack_tar()
+
+        absolute_end = time.time()
+
+        if self.timeit:
+            average_download_speed_value, name = self.convert_bytes(self.bytes / (transmission_end - begin))
+            print(f'[ROSE] Finished in: {round(absolute_end - begin, 2)} seconds with average download speed:'
+                  f' {average_download_speed_value} {name}')
 
     def unpack_tar(self):
         if not os.path.exists(self.dest):
