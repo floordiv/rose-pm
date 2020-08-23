@@ -95,6 +95,8 @@ class DownloadTransmission:
         with open(os.path.join(self.dest, self.filename), 'wb') as tar_file:
             total_bytes_received = 0
 
+            last_output_length = 0
+
             while total_bytes_received < self.bytes:
                 source = self.sock.recv(self.bytes - total_bytes_received)
                 tar_file.write(source)
@@ -102,7 +104,12 @@ class DownloadTransmission:
 
                 received_value, received_name = self.convert_bytes(total_bytes_received)
 
-                sys.stdout.write(f'\r[ROSE] Received {received_value} {received_name} of {value} {name}')
+                sys.stdout.write('\r' + ' ' * last_output_length)
+
+                text = f'[ROSE] Received {received_value} {received_name} of {value} {name}'
+                last_output_length = len(text)
+
+                sys.stdout.write('\r' + text)
                 sys.stdout.flush()
 
             print('\n[ROSE] Transmission completed')
@@ -149,10 +156,10 @@ class DownloadTransmission:
 
     def convert_bytes(self, source):
         for name, num in list(self.samples.items())[::-1]:
-            if self.bytes >= num:
-                value, name = round(self.bytes / num, 2), name
+            if source >= num:
+                value, name = round(source / num, 2), name
                 break
         else:
-            value, name = self.bytes, 'B'
+            value, name = source, 'B'
 
         return value, name
