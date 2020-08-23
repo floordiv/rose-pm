@@ -65,6 +65,12 @@ class DownloadTransmission:
         self.bytes = None
         self.filename = 'unknown.tar.gz'
 
+        self.samples = {
+            'KB': 1024,
+            'MB': 1048576,
+            'GB': 1073741824
+        }
+
     def start(self):
         self.sock.settimeout(3)
 
@@ -84,6 +90,8 @@ class DownloadTransmission:
             print('[ROSE] Transmission failed: did not receive initial packet')
             return
 
+        value, name = self.convert_bytes(self.bytes)
+
         with open(os.path.join(self.dest, self.filename), 'wb') as tar_file:
             total_bytes_received = 0
 
@@ -92,7 +100,9 @@ class DownloadTransmission:
                 tar_file.write(source)
                 total_bytes_received += len(source)
 
-                sys.stdout.write(f'\r[ROSE] Received {total_bytes_received} bytes of {self.bytes}')
+                received_value, received_name = self.convert_bytes(total_bytes_received)
+
+                sys.stdout.write(f'\r[ROSE] Received {received_value} {received_name} of {value} {name}')
                 sys.stdout.flush()
 
             print('\n[ROSE] Transmission completed')
@@ -136,3 +146,13 @@ class DownloadTransmission:
 
     def rm_extension(self, filename, extension):
         return filename[:-len(extension)]
+
+    def convert_bytes(self, source):
+        for name, num in list(self.samples.items())[::-1]:
+            if self.bytes >= num:
+                value, name = round(self.bytes / num, 2), name
+                break
+        else:
+            value, name = self.bytes, 'B'
+
+        return value, name

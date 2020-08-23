@@ -14,9 +14,9 @@ config = {
 }
 
 parse_args = (
-    ('--reinstall', 'reinstall', lambda value: value == 'true'),
-    ('--dest', 'dest_path', str),
-    ('--server', 'pm_addr', lambda value: value.split(':'))
+    ('--reinstall', 'flag', 'reinstall', lambda value: value == 'true'),
+    ('--dest', 'keyvalue', 'dest_path', str),
+    ('--server', 'keyvalue', 'pm_addr', lambda value: value.split(':'))
 )
 
 
@@ -27,17 +27,15 @@ if __name__ == '__main__':
         print('[ROSE] Usage: python3 rose.py <command> [args]')
         sys.exit(1)
 
-    sess = Session((config['pm_addr'][0], int(config['pm_addr'][1])))
     command, *cmdargs = args
 
-    for arg, dest_arg, key in parse_args:
+    for arg, flag, dest_arg, key in parse_args:
         if arg in cmdargs:
-            if cmdargs.index(arg) == len(cmdargs) - 1:  # just a flag
+            if flag == 'flag':  # just a flag
                 config[dest_arg] = True
             else:
                 val = cmdargs[cmdargs.index(arg) + 1]
                 config[dest_arg] = key(val)
-
                 cmdargs.remove(val)
 
             cmdargs.remove(arg)
@@ -45,6 +43,8 @@ if __name__ == '__main__':
     if command not in commands.__dict__:
         print('[ROSE] Unknown command:', command)
         sys.exit(1)
+
+    sess = Session((config['pm_addr'][0], int(config['pm_addr'][1])))
 
     command_function = commands.__dict__[command]
     command_function(sess, config, *cmdargs)
